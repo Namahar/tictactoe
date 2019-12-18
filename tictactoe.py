@@ -3,7 +3,6 @@
 
 import turtle as t
 import math
-import random
 
 # size is for horizontal lines and ratio is for vertical lines
 size = 300
@@ -20,7 +19,14 @@ combos = [[0, 1, 2],
           [1, 4, 7], 
           [2, 5, 8],
           [0, 4, 8], 
-          [2, 4, 6] ]  
+          [2, 4, 6] 
+         ]  
+
+scores = {
+   'X': 1,
+   'O': -1,
+   'tie': 0
+}
 
 # draws tic tac toe board
 def drawBoard():
@@ -154,7 +160,7 @@ def draw(index, player):
    return
 
 # checks if board contains winning combos
-def findWinner():
+def find_winner():
    for combo in combos:
       a = combo[0]
       b = combo[1]
@@ -162,9 +168,12 @@ def findWinner():
 
       if board[a] != '':
          if board[a] == board[b] and board[a] == board[c]:
-            return combo
+            return combo, board[a]
 
-   return 0
+   if '' in board:
+      return None, None
+   else:
+      return None, 'tie'
 
 # have to set pos to draw line for each combo
 def drawLine(combo):
@@ -218,11 +227,78 @@ def drawLine(combo):
    t.home()
    return
 
-def tictactoe(moves, p1, p2):
+# if ismaximizing is true
+# player is x
+def minimax(depth, ismaximizing, alpha, beta):
+   result, player = find_winner()
+   if player != None:
+      return scores[player]
+
+   if ismaximizing:
+      best_score = -math.inf
+      for i in range(9):
+         if board[i] == '':
+            board[i] = 'X'
+            score = minimax(depth + 1, False, alpha, beta)
+            board[i] = ''
+            best_score = max(score, best_score)
+
+            alpha = max(score, alpha)
+            if beta <= alpha:
+               return best_score
+
+      return best_score
+
+   else:
+      best_score = math.inf
+      for i in range(9):
+         if board[i] == '':
+            board[i] = 'O'
+            score = minimax(depth + 1, True, alpha, beta)
+            board[i] = ''
+            best_score = min(score, best_score)
+
+            beta = min(beta, score)
+            if beta <= alpha:
+               return best_score
+
+      return best_score
+
+def best_move(turn):
+   if turn:
+      best_score = -math.inf
+   else:
+      best_score = math.inf
+
+   move = math.inf
+
+   for i in range(9):
+      if board[i] == '':
+
+         if turn:
+            board[i] = 'X'
+            score = minimax(0, False, -math.inf, math.inf)
+            board[i] = ''
+            if score > best_score:
+               best_score = score
+               move = i
+
+         else:
+            board[i] = 'O'
+            score = minimax(0, True, -math.inf, math.inf)
+            board[i] = ''
+            if score < best_score:
+               best_score = score
+               move = i
+
+   return move
+
+def tictactoe(p1, p2):
    turn = 1
 
    # loop goes through each move in array
-   for play in moves:
+   for i in range(9):
+      play = best_move(turn)
 
       # draw x
       if turn == 1:
@@ -240,10 +316,11 @@ def tictactoe(moves, p1, p2):
       turn = (turn + 1) % 2
 
       # check board if a winner
-      win = findWinner()
+      win, player = find_winner()
       
       # draw line through winning combo
-      if win:
+      if win != 'tie' and win != None:
+         print(win)
          drawLine(win)
          return
 
@@ -264,13 +341,8 @@ def setup():
    # return turtle to normal speed
    t.speed(6)
 
-   # array of moves and shuffles for randomness
-   moves = [x for x in range(9)]
-   random.shuffle(moves)
-   random.shuffle(moves)
-
    # function plays game of tic tac toe
-   tictactoe(moves, 'X', 'O')
+   tictactoe('X', 'O')
 
    return
 
